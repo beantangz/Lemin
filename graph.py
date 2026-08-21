@@ -102,64 +102,99 @@ class Graph:
 
         paths = []
 
+        # quantité de flow disponible sur chaque vraie edge
+        flow = {}
+
+        for node in self.nodes.values():
+            for edge in node.neigh:
+                if not edge.residual:
+                    flow[edge] = edge.rev.capacity
+
         while True:
 
             path = []
             curr = start
-
             visited_node = set()
 
             while curr != end:
 
                 found = False
-
                 visited_node.add(curr)
 
                 for edge in curr.neigh:
 
-                    # on suit uniquement le flux utilise
                     if edge.residual:
                         continue
 
-                    if edge.rev.capacity <= 0:
+                    if flow.get(edge, 0) <= 0:
                         continue
 
                     nxt = edge.to
+
                     if nxt in visited_node:
                         continue
 
                     path.append(edge)
-                    edge.rev.capacity -= 1  # on consomme ce chemin
+
+                    # On consomme seulement la COPIE locale
+                    flow[edge] -= 1
+
                     curr = nxt
                     found = True
-                    break #sort du for, revient a la boucle while curr != end
+                    break
 
                 if not found:
-                   return paths  # plus de chemins possibles, arrete le while
+                    return paths
 
             paths.append(self.path_to_nodes(path))
 
 
+    def compute_turns(self, paths, ants):
+
+        if not paths:
+            return float("inf")
+
+        T = min(len(path) - 1 for path in paths)
+
+        while True:
+
+            capacity = 0
+
+            for path in paths:
+                capacity += max(0, T - len(path) + 2)
+
+            if capacity >= ants:
+                return T
+
+            T += 1
+
 
     
-    def all_paths(self, start_name, end_name):
+    def all_paths(self, start_name, end_name, ants):
+
+        best_paths = []
+        best_turns = float("inf")
 
         while self.bfs(start_name, end_name):
+
             path = self.build_path(end_name)
             self.use_flow(path)
-        
-        for node in self.nodes.values():
-            print("\nNODE:", node.name)
 
-            for edge in node.neigh:
-                print(
-                    edge.from_node.name,
-                    "->",
-                    edge.to.name,
-                    "cap:",
-                    edge.capacity,
-                    "rev cap:",
-                    edge.rev.capacity
-                )
+            current_paths = self.extract_paths(
+                start_name,
+                end_name
+            )
 
-        return self.extract_paths(start_name, end_name)
+            turns = self.compute_turns(
+                current_paths,
+                ants
+            )
+
+            print("Solution actuelle :", current_paths)
+            print("Tours :", turns)
+
+            if turns < best_turns:
+                best_turns = turns
+                best_paths = [p[:] for p in current_paths]
+
+        return best_paths
