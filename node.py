@@ -8,8 +8,8 @@ class Node:
         self.visited = False
 
     def add_neighbor(self, node):
-        forward = Edge(self, node, 1)
-        backward = Edge(node, self, 0)
+        forward = Edge(self, node, 1, False)
+        backward = Edge(node, self, 0, True)
 
         forward.rev = backward
         backward.rev = forward

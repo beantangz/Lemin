@@ -30,7 +30,7 @@ class Graph:
 
     
     def bfs(self, start_name, end_name):
-        
+
         self.reset()
         q = deque()
 
@@ -65,7 +65,8 @@ class Graph:
     
 
 
-
+    # remonte le chemin depuis la fin avec les parents
+    # pour construire le chemin start -> end
     def build_path(self, end_name):
         
         curr = self.nodes[end_name]
@@ -80,7 +81,7 @@ class Graph:
         return list(path)
     
 
-
+    # utilise les arretes
     def use_flow(self, path):
 
         for edge in path:
@@ -117,17 +118,21 @@ class Graph:
                 for edge in curr.neigh:
 
                     # on suit uniquement le flux utilise
-                    if edge.rev.capacity > 0:
+                    if edge.residual:
+                        continue
 
-                        nxt = edge.to
-                        if nxt in visited_node:
-                            continue
+                    if edge.rev.capacity <= 0:
+                        continue
 
-                        path.append(edge)
-                        edge.rev.capacity -= 1  # on consomme ce chemin
-                        curr = nxt
-                        found = True
-                        break #sort du for, revient a la boucle while curr != end
+                    nxt = edge.to
+                    if nxt in visited_node:
+                        continue
+
+                    path.append(edge)
+                    edge.rev.capacity -= 1  # on consomme ce chemin
+                    curr = nxt
+                    found = True
+                    break #sort du for, revient a la boucle while curr != end
 
                 if not found:
                    return paths  # plus de chemins possibles, arrete le while
@@ -142,5 +147,19 @@ class Graph:
         while self.bfs(start_name, end_name):
             path = self.build_path(end_name)
             self.use_flow(path)
+        
+        for node in self.nodes.values():
+            print("\nNODE:", node.name)
+
+            for edge in node.neigh:
+                print(
+                    edge.from_node.name,
+                    "->",
+                    edge.to.name,
+                    "cap:",
+                    edge.capacity,
+                    "rev cap:",
+                    edge.rev.capacity
+                )
 
         return self.extract_paths(start_name, end_name)
